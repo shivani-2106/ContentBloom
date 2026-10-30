@@ -27,6 +27,7 @@ export default function Generate() {
   // Request status
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const charCount = sourceContent.length
   const charOverMax = charCount > MAX_CHARS
@@ -261,53 +262,65 @@ export default function Generate() {
               </div>
             </div>
 
-            {/* Output preferences */}
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <h3 className="text-sm font-semibold text-slate-800 mb-4">
-                Output Preferences
-              </h3>
+            {/* Optional Advanced Settings Toggle */}
+            <div className="mt-6 border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center justify-between w-full text-left text-xs font-bold text-slate-700 hover:text-bloom-600 transition-colors py-1"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>⚙️</span>
+                  <span>Advanced Generation Settings</span>
+                </span>
+                <span className="text-slate-400 font-mono text-[11px]">
+                  {showAdvanced ? 'Hide ▲' : 'Customize ▼'}
+                </span>
+              </button>
 
-              <div className="space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeHashtags}
-                    onChange={(e) =>
-                      setIncludeHashtags(e.target.checked)
-                    }
-                    className="mt-1 h-4 w-4 accent-sky-600"
-                  />
+              {showAdvanced && (
+                <div className="mt-4 pt-3 border-t border-slate-100 space-y-4 animate-in fade-in">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Output Preferences
+                  </h3>
 
-                  <span>
-                    <span className="block text-sm font-medium text-slate-800">
-                      Include hashtags
-                    </span>
-                    <span className="block text-xs text-slate-500">
-                      Add relevant hashtags for the selected platform.
-                    </span>
-                  </span>
-                </label>
+                  <div className="space-y-3">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={includeHashtags}
+                        onChange={(e) => setIncludeHashtags(e.target.checked)}
+                        className="mt-1 h-4 w-4 accent-sky-600 rounded"
+                      />
+                      <span>
+                        <span className="block text-xs font-semibold text-slate-800">
+                          Include platform-specific hashtags
+                        </span>
+                        <span className="block text-[11px] text-slate-500">
+                          Adds targeted hashtags appropriate to the selected social channel.
+                        </span>
+                      </span>
+                    </label>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeEmojis}
-                    onChange={(e) =>
-                      setIncludeEmojis(e.target.checked)
-                    }
-                    className="mt-1 h-4 w-4 accent-sky-600"
-                  />
-
-                  <span>
-                    <span className="block text-sm font-medium text-slate-800">
-                      Include emojis
-                    </span>
-                    <span className="block text-xs text-slate-500">
-                      Use emojis where appropriate to the selected tone.
-                    </span>
-                  </span>
-                </label>
-              </div>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={includeEmojis}
+                        onChange={(e) => setIncludeEmojis(e.target.checked)}
+                        className="mt-1 h-4 w-4 accent-sky-600 rounded"
+                      />
+                      <span>
+                        <span className="block text-xs font-semibold text-slate-800">
+                          Include natural emojis
+                        </span>
+                        <span className="block text-[11px] text-slate-500">
+                          Sprinkles natural emojis suited to the selected tone.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

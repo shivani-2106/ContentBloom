@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   generateAllFormats,
   improveAllFormats,
@@ -426,6 +426,7 @@ function PlatformPreview({ format, content }) {
 
 export default function GenerateAll() {
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [sourceContent, setSourceContent] = useState('')
   const [tone, setTone] = useState('friendly')
@@ -1033,9 +1034,26 @@ export default function GenerateAll() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
+                onClick={() =>
+                  navigate('/campaign?create=true', {
+                    state: {
+                      topic: sourceContent,
+                      targetAudience,
+                      name: `${sourceContent.slice(0, 36)} Campaign`,
+                    },
+                  })
+                }
+                className="btn-primary text-xs py-2 px-3.5 bg-gradient-to-r from-purple-600 to-bloom-600 font-bold shadow-xs"
+                title="Create a 30-day scheduled campaign from this source content"
+              >
+                🚀 Turn into 30-Day Campaign
+              </button>
+
+              <button
+                type="button"
                 onClick={handleRegenerateAll}
                 disabled={loading || improvingAll || sourceContent.trim().length < 50}
-                className="btn-primary text-xs py-2 px-3.5"
+                className="btn-secondary text-xs py-2 px-3.5"
               >
                 {loading ? 'Regenerating...' : '🔄 Regenerate All'}
               </button>

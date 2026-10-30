@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { generateVideoPlan } from '../api/contentApi'
 import { saveContentHistory } from '../utils/contentHistory'
 import { renderVideoFromPlan, downloadVideoBlob, renderScenePreviewFrame } from '../utils/canvasVideoEngine'
+import { getCampaignById, associateExportedMedia } from '../utils/campaignStorage'
 
 const PLATFORMS = [
   {
@@ -88,6 +89,12 @@ const COMPOSITION_OPTIONS = [
 
 export default function VideoStudio() {
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+
+  const campaignId = location.state?.campaignId || searchParams.get('campaignId')
+  const assetId = location.state?.assetId || searchParams.get('assetId')
+  const [connectedCampaign, setConnectedCampaign] = useState(null)
+  const [connectedAsset, setConnectedAsset] = useState(null)
 
   const [sourceContent, setSourceContent] = useState('')
   const [platform, setPlatform] = useState('youtube_shorts')
@@ -117,7 +124,61 @@ export default function VideoStudio() {
   const [renderedVideo, setRenderedVideo] = useState(null)
 
   useEffect(() => {
-    if (location.state?.sourceContent) {
+    if (campaignId) {
+      const camp = getCampaignById(campaignId)
+      if (camp) {
+        setConnectedCampaign(camp)
+        if (assetId) {
+          const found = camp.assets?.find((a) => a.id === assetId)
+          if (found) {
+            setConnectedAsset(found)
+            const content = found.body || found.caption || found.hook || ''
+            setSourceContent(content)
+            setTargetDuration(Math.min(60, 30))
+
+            // Build initial storyboard plan so video is immediately playable
+            const hookText = found.hook || '3-Second Retention Hook'
+            const lessonText = found.caption || found.body || 'Key strategy breakdown for modern growth'
+            const ctaText = found.callToAction || found.cta || 'Subscribe for more daily breakdowns'
+            const initialPlan = {
+              title: found.title || `Day ${found.dayNumber} Video`,
+              hook: hookText,
+              content_format: 'educational_explainer',
+              visual_style: 'kinetic_tech',
+              target_duration_seconds: 15,
+              call_to_action: ctaText,
+              scenes: [
+                {
+                  scene_number: 1,
+                  duration_seconds: 4,
+                  visual_cue: 'Bold opening typography with pulsing badge',
+                  on_screen_text: hookText.slice(0, 65),
+                  voiceover: hookText,
+                  composition_type: 'typography_focus',
+                },
+                {
+                  scene_number: 2,
+                  duration_seconds: 6,
+                  visual_cue: 'Data visualization and core architecture breakdown',
+                  on_screen_text: lessonText.slice(0, 85),
+                  voiceover: lessonText.slice(0, 160),
+                  composition_type: 'framework_steps',
+                },
+                {
+                  scene_number: 3,
+                  duration_seconds: 5,
+                  visual_cue: 'Pulsing subscribe badge and conversion callout',
+                  on_screen_text: ctaText.slice(0, 60),
+                  voiceover: ctaText,
+                  composition_type: 'cta_outro',
+                },
+              ],
+            }
+            setPlan(initialPlan)
+          }
+        }
+      }
+    } else if (location.state?.sourceContent) {
       setSourceContent(location.state.sourceContent)
     } else if (location.state?.script) {
       setSourceContent(location.state.script)
@@ -127,7 +188,7 @@ export default function VideoStudio() {
       setSourceGraphic(location.state.sourceGraphic)
       setSuccess('Connected Image Studio graphic asset! It will appear directly in your video.')
     }
-  }, [location.state])
+  }, [location.state, campaignId, assetId])
 
   async function handleRenderPlayableVideo() {
     if (!plan || !plan.scenes?.length) return
@@ -168,8 +229,23 @@ export default function VideoStudio() {
     if (!renderedVideo?.blob) return
     const filename = `ContentBloom_${plan?.title ? plan.title.replace(/\s+/g, '_') : 'Video'}_9x16.webm`
     downloadVideoBlob(renderedVideo.blob, filename)
-    setSuccess(`Downloaded ${filename} successfully!`)
-    setTimeout(() => setSuccess(''), 3000)
+
+    if (campaignId && assetId) {
+      const dur = Math.min(60, Math.round(renderedVideo.duration || 15))
+      associateExportedMedia(campaignId, assetId, {
+        type: 'video',
+        metadata: {
+          filename,
+          durationSeconds: dur,
+          totalFrames: renderedVideo.totalFrames || (dur * 30),
+          resolution: '1080x1920',
+        },
+      })
+      setSuccess(`Downloaded ${filename} (${dur}s) & associated with Campaign Asset ${assetId}!`)
+    } else {
+      setSuccess(`Downloaded ${filename} successfully!`)
+    }
+    setTimeout(() => setSuccess(''), 4000)
   }
 
   async function handleGenerate(e) {
@@ -302,6 +378,54 @@ export default function VideoStudio() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Campaign Connection Banner */}
+      {connectedCampaign && connectedAsset ? (
+        <div className="mb-6 p-4 rounded-xl border border-red-300 bg-red-50 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎬</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-red-800">
+                  Campaign Studio Video Asset Linked
+                </span>
+                <span className="text-[10px] font-bold bg-red-200 text-red-900 px-2 py-0.5 rounded-full">
+                  Day {connectedAsset.dayNumber} · Max 60s
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                Campaign: <strong className="text-slate-900">{connectedCampaign.name}</strong> · Asset ID: <code className="text-red-700 font-bold">{connectedAsset.id}</code>
+              </p>
+            </div>
+          </div>
+          <Link
+            to={`/campaign?campaignId=${campaignId}&assetId=${assetId}`}
+            className="btn-secondary text-xs py-1.5 px-3 bg-white hover:bg-slate-50 border-red-200 font-bold text-red-700"
+          >
+            ← Return to Campaign Manager
+          </Link>
+        </div>
+      ) : (
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/campaign"
+            className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1"
+          >
+            ← Return to Campaign Manager
+          </Link>
+          <span className="text-[11px] text-slate-400">
+            Supporting Tool · Video Production (≤60s)
+          </span>
+        </div>
+      )}
+
+      {/* Assessment Disclosure Notice */}
+      <div className="mb-6 p-3 rounded-xl border border-slate-200 bg-slate-50/80 text-xs text-slate-600 flex items-start gap-2">
+        <span className="text-base text-slate-400 mt-0.5">ℹ️</span>
+        <div>
+          <strong className="text-slate-800">Video Studio Notice:</strong> This studio renders vertical 9:16 motion graphics videos client-side via HTML5 Canvas and MediaRecorder (WebM export, ≤60s). These are animated kinetic text and scene cards, not live-action footage.
+        </div>
+      </div>
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">

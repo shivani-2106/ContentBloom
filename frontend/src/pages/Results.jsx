@@ -393,17 +393,29 @@ setSuccess('A fresh version has been generated and saved to history!')
         </button>
 
         <button
-  type="button"
-  onClick={() => {
-    saveCurrentVersion(text, 'edited')
-    setSuccess('Your edited content has been saved to history!')
-    setError('')
-  }}
-  className="btn-secondary"
-  disabled={!text.trim() || isBusy}
->
-  💾 Save to History
-</button>
+          type="button"
+          onClick={() => {
+            saveCurrentVersion(text, 'edited')
+            setSuccess('Your edited content has been saved to history!')
+            setError('')
+          }}
+          className="btn-secondary"
+          disabled={!text.trim() || isBusy}
+        >
+          💾 Save to History
+        </button>
+
+        <Link
+          to="/campaign?create=true"
+          state={{
+            topic: sourceContent || text.slice(0, 100),
+            name: `${platformLabel} ${typeLabel} Campaign`,
+            targetAudience: customization.targetAudience ?? 'general',
+          }}
+          className="btn-secondary text-bloom-700 border-bloom-200 bg-bloom-50/50 hover:bg-bloom-50 font-bold"
+        >
+          🚀 Create 30-Day Campaign
+        </Link>
       </div>
 
       <p className="mt-6 text-xs text-slate-400">

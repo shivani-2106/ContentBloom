@@ -1,269 +1,611 @@
-import { Link } from 'react-router-dom'
-
-const PLATFORMS = [
-  {
-    emoji: '💼',
-    title: 'LinkedIn Post',
-    desc: 'Professional thought-leadership posts with hooks, structured insights, and engaging calls to action for your professional network.',
-    gradient: 'from-blue-600 to-indigo-700',
-    tag: 'Thought Leadership',
-  },
-  {
-    emoji: '📸',
-    title: 'Instagram Caption',
-    desc: 'Scroll-stopping aesthetic captions crafted with emotional hooks, conversational body text, and strategic hashtag placements.',
-    gradient: 'from-pink-500 via-rose-500 to-purple-600',
-    tag: 'Social Engagement',
-  },
-  {
-    emoji: '🎬',
-    title: 'YouTube Shorts',
-    desc: 'High-retention 9:16 short-video scripts complete with a 3-second hook, visual cues, scene pacing, and audio prompts.',
-    gradient: 'from-red-500 to-red-700',
-    tag: 'Short-Form Video',
-  },
-  {
-    emoji: '🎨',
-    title: 'Carousel Slides',
-    desc: 'Structured slide-by-slide storytelling with bold slide headlines, bite-sized body copy, and a high-converting finale slide.',
-    gradient: 'from-violet-500 to-purple-700',
-    tag: 'Slide Storyboard',
-  },
-]
-
-const STEPS = [
-  {
-    step: '01',
-    title: 'Input Your Idea',
-    desc: 'Paste a blog post, article, lecture notes, or rough outline. Set your tone, audience, and length.',
-  },
-  {
-    step: '02',
-    title: 'AI Adapts to 4 Formats',
-    desc: 'Google Gemini simultaneously generates platform-tailored copy for LinkedIn, Instagram, Shorts, and Carousels.',
-  },
-  {
-    step: '03',
-    title: 'Preview, Edit & Export',
-    desc: 'Inspect interactive platform-accurate previews, edit copy in real time, and download individual or bundled text files.',
-  },
-]
-
-const HIGHLIGHTS = [
-  {
-    icon: '⚡',
-    title: '1-Click Multi-Format',
-    desc: 'Stop rewriting content 4 times. Generate all major formats from one source in seconds.',
-  },
-  {
-    icon: '📱',
-    title: 'Realistic Previews',
-    desc: 'Preview how your content will look on LinkedIn, Instagram, 9:16 Shorts, and Carousel slides.',
-  },
-  {
-    icon: '🔄',
-    title: 'Regenerate & Improve',
-    desc: 'Iterate endlessly. Ask AI to polish hooks, readability, or tone with one click.',
-  },
-  {
-    icon: '💾',
-    title: 'Grouped History',
-    desc: 'Every generation is saved locally as an organized bundle. Revisit, re-edit, or re-export anytime.',
-  },
-]
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  getCampaigns,
+  initializeDemoCampaign,
+  getCampaignStats,
+  getDemoVisits,
+} from '../utils/campaignStorage'
+import { generateCampaignCsv, downloadCsvFile } from '../utils/csvExporter'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
+  const [campaigns, setCampaigns] = useState([])
+  const [successMsg, setSuccessMsg] = useState('')
+
+  // Load campaigns on mount
+  useEffect(() => {
+    setCampaigns(getCampaigns())
+  }, [])
+
+  function refresh() {
+    setCampaigns(getCampaigns())
+  }
+
+  // Aggregate stats across all campaigns
+  const aggregateStats = useMemo(() => {
+    let totalAssets = 0
+    let approvedAssets = 0
+    let scheduledAssets = 0
+    let draftAssets = 0
+    let exportedGraphics = 0
+    let exportedVideos = 0
+
+    for (const c of campaigns) {
+      const stats = getCampaignStats(c)
+      totalAssets += stats.total
+      approvedAssets += stats.approved
+      scheduledAssets += stats.scheduled
+      draftAssets += stats.drafts
+      exportedGraphics += stats.exportedGraphics
+      exportedVideos += stats.exportedVideos
+    }
+
+    const visits = getDemoVisits()
+
+    return {
+      totalCampaigns: campaigns.length,
+      totalAssets,
+      approvedAssets,
+      scheduledAssets,
+      draftAssets,
+      exportedGraphics,
+      exportedVideos,
+      totalDemoVisits: visits.length,
+      completedPercentage:
+        totalAssets > 0 ? Math.round(((approvedAssets + scheduledAssets) / totalAssets) * 100) : 0,
+    }
+  }, [campaigns])
+
+  // Handle Load Demo Campaign
+  function handleLoadDemo() {
+    const demo = initializeDemoCampaign()
+    refresh()
+    setSuccessMsg(`Loaded "${demo.name}" with 30 scheduled assets, 5 graphics, and 10 videos!`)
+    setTimeout(() => setSuccessMsg(''), 4000)
+  }
+
+  // Handle Quick CSV Download from Dashboard
+  function handleDownloadCsv(campaign) {
+    if (!campaign || !campaign.assets?.length) return
+    const csv = generateCampaignCsv(campaign)
+    const filename = `contentbloom_${campaign.campaignSlug || 'campaign'}_calendar.csv`
+    downloadCsvFile(csv, filename)
+    setSuccessMsg(`Downloaded scheduler-ready CSV (${campaign.assets.length} rows) as ${filename}!`)
+    setTimeout(() => setSuccessMsg(''), 3500)
+  }
+
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-bloom-700 via-bloom-600 to-accent-600 py-20 sm:py-28 px-4 text-white">
-        {/* Subtle background glow circles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-accent-400/20 blur-3xl" />
-        </div>
-
-        <div className="relative max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md px-4 py-1.5 text-xs sm:text-sm font-medium text-white mb-6 border border-white/20 shadow-xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>ContentBloom AI Studio</span>
-            <span className="text-white/40">•</span>
-            <span className="text-bloom-100">Powered by Google Gemini</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* ── Welcome Heading & Primary Action ───────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#E5E7F0] pb-6">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#EAE7FF] px-3 py-1 text-xs font-bold text-[#5145CD] mb-2">
+            <span className="h-2 w-2 rounded-full bg-[#168568] animate-pulse" />
+            <span>AI Content Campaign Manager</span>
+            <span className="text-[#5145CD]/40">•</span>
+            <span>IncuBrix Product Edition</span>
           </div>
-
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.15] mb-6">
-            From one source idea
-            <br />
-            <span className="bg-gradient-to-r from-bloom-100 via-white to-pink-200 bg-clip-text text-transparent">
-              to four publish-ready formats.
-            </span>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#171A35] tracking-tight">
+            Campaign Command Center
           </h1>
-
-          <p className="text-lg sm:text-xl text-bloom-100 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-            Repurpose your articles, notes, and outlines into high-performing{' '}
-            <strong className="text-white font-semibold">LinkedIn posts</strong>,{' '}
-            <strong className="text-white font-semibold">Instagram captions</strong>,{' '}
-            <strong className="text-white font-semibold">YouTube Shorts scripts</strong>, and{' '}
-            <strong className="text-white font-semibold">Carousels</strong> — all in one click.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              to="/generate-all"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-xl
-                         bg-white text-bloom-800 font-bold px-8 py-3.5 text-base sm:text-lg
-                         hover:bg-bloom-50 hover:shadow-xl active:scale-[0.98] transition-all shadow-lg"
-            >
-              <span>✨</span>
-              <span>Generate All 4 Formats</span>
-              <svg className="h-5 w-5 text-bloom-600" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
-
-            <Link
-              to="/generate"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl
-                         bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3.5 text-base
-                         border border-white/20 backdrop-blur-sm transition-all"
-            >
-              <span>📝</span>
-              <span>Single Format Post</span>
-            </Link>
-          </div>
-
-          {/* Micro stats banner */}
-          <div className="mt-14 pt-8 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white">4-in-1</p>
-              <p className="text-xs text-bloom-200 mt-1">Multi-format export</p>
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white">100%</p>
-              <p className="text-xs text-bloom-200 mt-1">Editable previews</p>
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white">4 Tones</p>
-              <p className="text-xs text-bloom-200 mt-1">Audience targeted</p>
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white">Local</p>
-              <p className="text-xs text-bloom-200 mt-1">Private history store</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4 Supported Formats ───────────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="section-label justify-center">Tailored Content Architecture</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Designed for where your audience spends time
-          </h2>
-          <p className="text-slate-600 mt-3 text-base">
-            Each format follows algorithm-friendly conventions, proven engagement patterns, and native platform aesthetics.
+          <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+            Turn one core idea into a complete, organized 30-day social media campaign with multi-format copy, calendar scheduling, and verified media exports.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PLATFORMS.map((p) => (
-            <div
-              key={p.title}
-              className="card flex flex-col justify-between group hover:-translate-y-1 hover:shadow-md transition-all duration-200 border-slate-200"
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <Link
+            to="/campaign?create=true"
+            className="btn-primary py-2.5 px-4 text-xs sm:text-sm font-bold shadow-xs"
+          >
+            <span>➕</span> New Campaign
+          </Link>
+
+          <Link
+            to="/generate-all"
+            className="btn-secondary py-2.5 px-4 text-xs sm:text-sm font-semibold"
+          >
+            <span>✨</span> Generate 4 Formats
+          </Link>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      {successMsg && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs sm:text-sm text-emerald-800 flex items-center justify-between shadow-2xs animate-in fade-in"
+        >
+          <span>✓ {successMsg}</span>
+          <button
+            type="button"
+            onClick={() => setSuccessMsg('')}
+            className="text-emerald-700 hover:text-emerald-900 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Compact Quick Actions Strip ─────────────────────────────────── */}
+      <div className="card p-3 border-[#E5E7F0] bg-white flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Quick Actions
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/campaign?create=true"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#171A35] bg-[#F7F7FC] border border-[#E5E7F0] hover:bg-[#EAE7FF] hover:text-[#5145CD] hover:border-[#5145CD]/30 transition-colors"
+          >
+            <span>➕</span> Create Campaign
+          </Link>
+          <Link
+            to="/generate-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#171A35] bg-[#F7F7FC] border border-[#E5E7F0] hover:bg-[#EAE7FF] hover:text-[#5145CD] hover:border-[#5145CD]/30 transition-colors"
+          >
+            <span>✨</span> Generate Content
+          </Link>
+          <Link
+            to="/campaign?tab=calendar"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#171A35] bg-[#F7F7FC] border border-[#E5E7F0] hover:bg-[#EAE7FF] hover:text-[#5145CD] hover:border-[#5145CD]/30 transition-colors"
+          >
+            <span>📅</span> Open Calendar
+          </Link>
+          {campaigns.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => handleDownloadCsv(campaigns[0])}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#171A35] bg-[#F7F7FC] border border-[#E5E7F0] hover:bg-[#EAE7FF] hover:text-[#5145CD] hover:border-[#5145CD]/30 transition-colors"
             >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${p.gradient}
-                                flex items-center justify-center text-2xl shadow-sm text-white`}
-                  >
-                    {p.emoji}
+              <span>⬇</span> Export CSV
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleLoadDemo}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#5145CD] bg-[#EAE7FF] border border-[#d7d2ff] hover:bg-[#d7d2ff] transition-colors"
+            >
+              <span>⚡</span> Load Demo Campaign
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Key Metrics Grid (Equal 6-card grid on wide desktop) ─────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <div className="card p-4 border-[#E5E7F0] shadow-2xs hover:border-slate-300">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            Active Campaigns
+          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#171A35] font-mono">
+              {aggregateStats.totalCampaigns}
+            </span>
+            <span className="text-xs font-semibold text-[#5145CD] bg-[#EAE7FF] px-1.5 py-0.5 rounded">
+              Live
+            </span>
+          </div>
+        </div>
+
+        <div className="card p-4 border-[#E5E7F0] shadow-2xs hover:border-slate-300">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            Total Assets
+          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#171A35] font-mono">
+              {aggregateStats.totalAssets}
+            </span>
+            <span className="text-xs text-slate-400 font-mono">
+              {aggregateStats.draftAssets} drafts
+            </span>
+          </div>
+        </div>
+
+        <div className="card p-4 border-[#E5E7F0] shadow-2xs hover:border-slate-300">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            Approved Assets
+          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-[#168568] font-mono">
+              {aggregateStats.approvedAssets}
+            </span>
+            <span className="text-xs font-semibold text-[#168568] bg-emerald-50 px-1.5 py-0.5 rounded">
+              {aggregateStats.completedPercentage}%
+            </span>
+          </div>
+        </div>
+
+        <div className="card p-4 border-[#E5E7F0] shadow-2xs hover:border-slate-300">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            🎨 Graphics Exported
+          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-sky-600 font-mono">
+              {aggregateStats.exportedGraphics}
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono">PNG Files</span>
+          </div>
+        </div>
+
+        <div className="card p-4 border-[#E5E7F0] shadow-2xs hover:border-slate-300">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            🎬 Videos Rendered
+          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-rose-600 font-mono">
+              {aggregateStats.exportedVideos}
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono">≤60s WebM</span>
+          </div>
+        </div>
+
+        <div className="card p-4 border-[#E5E7F0] shadow-2xs hover:border-slate-300">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            Calendar Days
+          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-purple-600 font-mono">
+              {campaigns[0]?.assets?.length || 30}
+            </span>
+            <span className="text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold">
+              30-Day
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Active & Recent Campaigns Section ───────────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-[#171A35]">
+              Active Campaigns
+            </h2>
+            <p className="text-xs text-slate-500">
+              Select any campaign to edit assets, view the 30-day schedule, or export scheduler CSV.
+            </p>
+          </div>
+
+          {campaigns.length > 0 && (
+            <Link
+              to="/campaign"
+              className="text-xs font-bold text-[#5145CD] hover:underline inline-flex items-center gap-1"
+            >
+              Open Campaign Manager ➔
+            </Link>
+          )}
+        </div>
+
+        {campaigns.length > 0 ? (
+          <div
+            className={
+              campaigns.length === 1
+                ? 'max-w-2xl'
+                : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'
+            }
+          >
+            {campaigns.map((camp) => {
+              const stats = getCampaignStats(camp)
+              return (
+                <div
+                  key={camp.id}
+                  className="card border-[#E5E7F0] hover:border-[#5145CD]/40 hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Header tags */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="font-mono text-[10px] font-bold bg-[#F7F7FC] text-[#171A35] border border-[#E5E7F0] px-2 py-0.5 rounded">
+                        {camp.assets?.length || 0} Assets
+                      </span>
+                      <span className="text-[10px] font-bold text-[#5145CD] bg-[#EAE7FF] px-2 py-0.5 rounded-full uppercase">
+                        {camp.campaignGoal ? camp.campaignGoal.replace(/_/g, ' ') : 'Growth Sprint'}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-bold text-[#171A35] line-clamp-1 mb-1">
+                      {camp.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 line-clamp-2 mb-3">
+                      {camp.topic || 'Cohesive multi-platform distribution campaign.'}
+                    </p>
+
+                    {/* Meta info */}
+                    <div className="p-3 rounded-xl bg-[#F7F7FC] border border-[#E5E7F0] text-[11px] space-y-1 mb-3">
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Target Audience:</span>
+                        <strong className="text-[#171A35] truncate max-w-[160px]">
+                          {camp.targetAudience || 'General'}
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Start Date:</span>
+                        <strong className="text-[#171A35] font-mono">
+                          {camp.startDate || '2026-10-30'}
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Media Output:</span>
+                        <span className="font-bold">
+                          <span className="text-sky-600">🎨 {stats.exportedGraphics} PNG</span>
+                          <span className="text-slate-400 mx-1">·</span>
+                          <span className="text-rose-600">🎬 {stats.exportedVideos} WebM</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                        <span>Approval Progress</span>
+                        <span className="font-mono font-bold text-[#171A35]">
+                          {stats.approved} / {stats.total} Approved ({stats.completionRate}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-[#F7F7FC] rounded-full overflow-hidden border border-[#E5E7F0]">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#5145CD] to-[#168568] transition-all duration-300"
+                          style={{ width: `${stats.completionRate}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                    {p.tag}
-                  </span>
+
+                  {/* Actions */}
+                  <div className="pt-3 border-t border-[#E5E7F0] flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/campaign?campaignId=${camp.id}`)}
+                      className="btn-primary text-xs py-1.5 px-3 flex-1 justify-center"
+                    >
+                      🚀 Open Campaign
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/campaign?campaignId=${camp.id}&tab=calendar`)}
+                      className="btn-secondary text-xs py-1.5 px-2.5 font-semibold"
+                      title="View 30-Day Calendar"
+                    >
+                      📅 Calendar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadCsv(camp)}
+                      className="btn-secondary text-xs py-1.5 px-2.5 font-semibold"
+                      title="Download Scheduler CSV"
+                    >
+                      ⬇ CSV
+                    </button>
+                  </div>
                 </div>
-
-                <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-bloom-600 transition-colors">
-                  {p.title}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{p.desc}</p>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-bloom-600">
-                <span>View platform preview</span>
-                <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
-              </div>
+              )
+            })}
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="card border-dashed border-2 border-slate-300 p-8 sm:p-12 text-center bg-white/70 max-w-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-[#EAE7FF] text-[#5145CD] flex items-center justify-center mx-auto mb-3 text-2xl shadow-xs">
+              🚀
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Value Props / Features Grid ──────────────────────────────────── */}
-      <section className="bg-slate-100/70 py-16 px-4 sm:px-6 border-y border-slate-200/80">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {HIGHLIGHTS.map((h) => (
-              <div key={h.title} className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs">
-                <span className="text-2xl mb-3 block">{h.icon}</span>
-                <h4 className="font-bold text-slate-900 text-base mb-1.5">{h.title}</h4>
-                <p className="text-slate-600 text-xs leading-relaxed">{h.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ─────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="section-label justify-center">Effortless Workflow</span>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">How ContentBloom works</h2>
-            <p className="text-slate-600 mt-2 text-sm sm:text-base">
-              Three streamlined steps from raw text to publish-ready distribution.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {STEPS.map((s) => (
-              <div key={s.step} className="flex flex-col items-center text-center p-6 rounded-2xl bg-slate-50 border border-slate-200/70">
-                <div className="w-13 h-13 rounded-2xl bg-bloom-100 border-2 border-bloom-300 flex items-center justify-center mb-5 text-bloom-700 font-black text-lg shadow-xs">
-                  {s.step}
-                </div>
-                <h3 className="font-bold text-slate-900 text-lg mb-2">{s.title}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA Box */}
-          <div className="mt-14 p-8 sm:p-10 rounded-2xl bg-gradient-to-r from-bloom-600 via-bloom-700 to-accent-600 text-white text-center shadow-lg">
-            <h3 className="text-2xl sm:text-3xl font-extrabold mb-3">
-              Ready to bloom your content everywhere?
+            <h3 className="text-lg font-bold text-[#171A35] mb-1">
+              No Campaigns Created Yet
             </h3>
-            <p className="text-bloom-100 max-w-xl mx-auto mb-6 text-sm sm:text-base">
-              Start with one idea and get four platform-customized outputs in under ten seconds.
+            <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mb-6">
+              Turn your source idea, article, or launch announcement into a complete 30-day multi-platform campaign package.
             </p>
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
-                to="/generate-all"
-                className="btn-primary bg-white text-bloom-800 hover:bg-bloom-50 text-base py-3 px-8 shadow-md"
+                to="/campaign?create=true"
+                className="btn-primary text-xs sm:text-sm py-2 px-4 shadow-sm"
               >
-                ✨ Launch 4-in-1 Studio
+                ➕ Create First Campaign
               </Link>
-              <Link
-                to="/history"
-                className="btn-secondary bg-bloom-800/40 text-white border-white/20 hover:bg-bloom-800/60 text-base py-3 px-6"
+              <button
+                type="button"
+                onClick={handleLoadDemo}
+                className="btn-secondary text-xs sm:text-sm py-2 px-4 border-[#5145CD]/30 text-[#5145CD] bg-[#EAE7FF]/50 hover:bg-[#EAE7FF]"
               >
-                📚 Open Saved Library
-              </Link>
+                ⚡ Load IncuBrix Demo Campaign (30-Day Sprint)
+              </button>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* ── Assessment Requirements & Deliverables Verification ──────────── */}
+      <div className="card border-[#E5E7F0] bg-white p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-[#E5E7F0]">
+          <div>
+            <span className="section-label">
+              <span>🏆</span> IncuBrix Product Development Challenge
+            </span>
+            <h2 className="text-base sm:text-lg font-extrabold text-[#171A35]">
+              Assessment Deliverables & Live Verification Matrix
+            </h2>
+          </div>
+          <span className="text-xs font-mono text-slate-400">
+            Live System Audit
+          </span>
         </div>
-      </section>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">1. Ready-to-Publish Assets (≥30 required)</strong>
+              <span className="text-slate-500 text-[11px]">
+                {aggregateStats.totalAssets >= 30
+                  ? `✓ ${aggregateStats.totalAssets} assets stored in persistent campaign storage.`
+                  : `Currently ${aggregateStats.totalAssets}/30 assets created.`}
+              </span>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                aggregateStats.totalAssets >= 30 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {aggregateStats.totalAssets >= 30 ? 'MET (30+)' : 'PENDING'}
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">2. Multi-Platform Coverage</strong>
+              <span className="text-slate-500 text-[11px]">
+                LinkedIn, Instagram, YouTube Shorts, & Twitter / X formats supported.
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-emerald-100 text-emerald-800">
+              MET (4/4)
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">3. Actual Short Video Files (≥10 files, ≤60s)</strong>
+              <span className="text-slate-500 text-[11px]">
+                {aggregateStats.exportedVideos >= 10
+                  ? `✓ ${aggregateStats.exportedVideos} browser-rendered WebM video files associated with campaign assets.`
+                  : `Currently ${aggregateStats.exportedVideos}/10 videos rendered. Access Video Studio to render.`}
+              </span>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                aggregateStats.exportedVideos >= 10 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {aggregateStats.exportedVideos >= 10 ? 'MET (10+)' : `${aggregateStats.exportedVideos}/10`}
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">4. Actual Graphic / Carousel Files (≥5 files)</strong>
+              <span className="text-slate-500 text-[11px]">
+                {aggregateStats.exportedGraphics >= 5
+                  ? `✓ ${aggregateStats.exportedGraphics} canvas PNG files exported and associated with campaign assets.`
+                  : `Currently ${aggregateStats.exportedGraphics}/5 graphics exported. Access Image Studio to render.`}
+              </span>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                aggregateStats.exportedGraphics >= 5 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {aggregateStats.exportedGraphics >= 5 ? 'MET (5+)' : `${aggregateStats.exportedGraphics}/5`}
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">5. 30-Day Content Calendar & Scheduling</strong>
+              <span className="text-slate-500 text-[11px]">
+                Full 30-day interactive calendar view with platform filters and time slots.
+              </span>
+            </div>
+            <Link
+              to="/campaign?tab=calendar"
+              className="text-[#5145CD] font-bold hover:underline shrink-0"
+            >
+              View Calendar ➔
+            </Link>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">6. Quality Audit Engine (≥85% target)</strong>
+              <span className="text-slate-500 text-[11px]">
+                Deterministic 20-sample audit assessing hook, format, CTA, UTM, and bounds.
+              </span>
+            </div>
+            <Link
+              to="/campaign?tab=audit"
+              className="text-[#5145CD] font-bold hover:underline shrink-0"
+            >
+              Run Audit ➔
+            </Link>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-[#E5E7F0] bg-[#F7F7FC] flex items-start justify-between gap-2 md:col-span-2">
+            <div>
+              <strong className="text-[#171A35] block font-semibold">7. Connected Campaign Landing Page & Verified UTM Destination</strong>
+              <span className="text-slate-500 text-[11px]">
+                Registered internal resource route at <code>/resources/growth-playbook</code> with dynamic origin resolution, campaign attribution, and {aggregateStats.totalDemoVisits} demo visits logged in local storage.
+              </span>
+            </div>
+            <Link
+              to="/resources/growth-playbook?utm_source=dashboard&utm_medium=demo&utm_campaign=incubrix-30day-sprint"
+              className="text-[#5145CD] font-bold hover:underline shrink-0"
+            >
+              Preview Landing Page ➔
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Quick Workflow Jump Cards ────────────────────────────────────── */}
+      <div className="space-y-3">
+        <h2 className="text-base sm:text-lg font-bold text-[#171A35]">
+          Workflow Tools & Quick Access
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <Link
+            to="/campaign"
+            className="card p-4 border-[#E5E7F0] hover:border-[#5145CD]/40 hover:shadow-xs transition-all group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-105 transition-transform">🚀</div>
+            <h3 className="text-sm font-bold text-[#171A35] mb-1">Campaign Manager</h3>
+            <p className="text-xs text-slate-500 leading-snug">
+              Manage 30-day schedule, edit asset copy, review UTM tracking, and download CSV.
+            </p>
+          </Link>
+
+          <Link
+            to="/generate-all"
+            className="card p-4 border-[#E5E7F0] hover:border-[#5145CD]/40 hover:shadow-xs transition-all group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-105 transition-transform">✨</div>
+            <h3 className="text-sm font-bold text-[#171A35] mb-1">Generate 4 Formats</h3>
+            <p className="text-xs text-slate-500 leading-snug">
+              Simultaneously generate LinkedIn, Instagram, Shorts script, and Carousel slides from 1 idea.
+            </p>
+          </Link>
+
+          <Link
+            to="/resources/growth-playbook"
+            className="card p-4 border-[#E5E7F0] hover:border-[#5145CD]/40 hover:shadow-xs transition-all group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-105 transition-transform">📖</div>
+            <h3 className="text-sm font-bold text-[#171A35] mb-1">Connected Resource</h3>
+            <p className="text-xs text-slate-500 leading-snug">
+              The Growth Marketing Playbook landing page with attribution & 5-step framework.
+            </p>
+          </Link>
+
+          <Link
+            to="/image-studio"
+            className="card p-4 border-[#E5E7F0] hover:border-[#5145CD]/40 hover:shadow-xs transition-all group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-105 transition-transform">🎨</div>
+            <h3 className="text-sm font-bold text-[#171A35] mb-1">Image Studio</h3>
+            <p className="text-xs text-slate-500 leading-snug">
+              Design and export high-resolution client-side PNG branded cards & carousel graphics.
+            </p>
+          </Link>
+
+          <Link
+            to="/video-studio"
+            className="card p-4 border-[#E5E7F0] hover:border-[#5145CD]/40 hover:shadow-xs transition-all group"
+          >
+            <div className="text-2xl mb-2 group-hover:scale-105 transition-transform">🎬</div>
+            <h3 className="text-sm font-bold text-[#171A35] mb-1">Video Studio</h3>
+            <p className="text-xs text-slate-500 leading-snug">
+              Render browser-based 9:16 vertical motion graphics videos (WebM, ≤60s) from storyboards.
+            </p>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

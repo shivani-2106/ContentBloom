@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { generateImagePrompt } from '../api/contentApi'
 import { saveContentHistory } from '../utils/contentHistory'
+import { getCampaignById, associateExportedMedia } from '../utils/campaignStorage'
 import {
   GRAPHIC_FORMATS,
   GRAPHIC_THEMES,
@@ -98,7 +99,13 @@ const RATIO_PREVIEWS = {
 
 export default function ImageStudio() {
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const canvasRef = useRef(null)
+
+  const campaignId = location.state?.campaignId || searchParams.get('campaignId')
+  const assetId = location.state?.assetId || searchParams.get('assetId')
+  const [connectedCampaign, setConnectedCampaign] = useState(null)
+  const [connectedAsset, setConnectedAsset] = useState(null)
 
   // Studio Mode: 'graphic' (Actual PNG Canvas Designer) vs 'prompt' (AI Visual Concept & Prompt Generator)
   const [activeTab, setActiveTab] = useState('graphic')
@@ -142,14 +149,44 @@ export default function ImageStudio() {
   const [copiedKey, setCopiedKey] = useState('')
 
   useEffect(() => {
-    if (location.state?.sourceContent) {
+    if (campaignId) {
+      const camp = getCampaignById(campaignId)
+      if (camp) {
+        setConnectedCampaign(camp)
+        if (assetId) {
+          const found = camp.assets?.find((a) => a.id === assetId)
+          if (found) {
+            setConnectedAsset(found)
+            if (found.hook) setGraphicHeadline(found.hook)
+            else if (found.title) setGraphicHeadline(found.title)
+
+            if (found.caption) setGraphicSubhead(found.caption.slice(0, 160))
+            if (found.callToAction || found.cta) setCtaText(found.callToAction || found.cta)
+            if (found.platform) {
+              setGraphicBadge(found.platform.toUpperCase())
+              if (found.platform === 'Instagram') {
+                setGraphicFormat('instagram_post')
+                setPlatform('instagram')
+              } else if (found.platform === 'LinkedIn') {
+                setGraphicFormat('linkedin_post')
+                setPlatform('linkedin')
+              } else if (found.platform === 'YouTube Shorts') {
+                setGraphicFormat('youtube_thumb')
+                setPlatform('youtube_shorts')
+              }
+            }
+            setSourceContent(found.caption || found.body || found.hook || '')
+          }
+        }
+      }
+    } else if (location.state?.sourceContent) {
       setSourceContent(location.state.sourceContent)
       setGraphicHeadline(location.state.sourceContent.slice(0, 70))
     } else if (location.state?.topic) {
       setSourceContent(location.state.topic)
       setGraphicHeadline(location.state.topic.slice(0, 70))
     }
-  }, [location.state])
+  }, [location.state, campaignId, assetId])
 
   // Redraw canvas whenever graphic controls change
   useEffect(() => {
@@ -204,8 +241,21 @@ export default function ImageStudio() {
     if (!canvasRef.current) return
     const filename = `ContentBloom_${graphicFormat}_${layoutType}_${Date.now()}.png`
     await downloadCanvasAsPng(canvasRef.current, filename)
-    setSuccess(`Downloaded ${filename} successfully!`)
-    setTimeout(() => setSuccess(''), 3000)
+    if (campaignId && assetId) {
+      associateExportedMedia(campaignId, assetId, {
+        type: 'graphic',
+        metadata: {
+          filename,
+          format: graphicFormat,
+          layout: layoutType,
+          theme: graphicTheme,
+        },
+      })
+      setSuccess(`Downloaded ${filename} & associated with Campaign Asset ${assetId}!`)
+    } else {
+      setSuccess(`Downloaded ${filename} successfully!`)
+    }
+    setTimeout(() => setSuccess(''), 4000)
   }
 
   function handleApplySpecToGraphic(specData) {
@@ -369,6 +419,54 @@ export default function ImageStudio() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Campaign Connection Banner */}
+      {connectedCampaign && connectedAsset ? (
+        <div className="mb-6 p-4 rounded-xl border border-bloom-300 bg-bloom-50 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🚀</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-bloom-800">
+                  Campaign Studio Asset Linked
+                </span>
+                <span className="text-[10px] font-bold bg-bloom-200 text-bloom-900 px-2 py-0.5 rounded-full">
+                  Day {connectedAsset.dayNumber} · {connectedAsset.platform}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                Campaign: <strong className="text-slate-900">{connectedCampaign.name}</strong> · Asset ID: <code className="text-bloom-700 font-bold">{connectedAsset.id}</code>
+              </p>
+            </div>
+          </div>
+          <Link
+            to={`/campaign?campaignId=${campaignId}&assetId=${assetId}`}
+            className="btn-secondary text-xs py-1.5 px-3 bg-white hover:bg-slate-50 border-bloom-200 font-bold text-bloom-700"
+          >
+            ← Return to Campaign Manager
+          </Link>
+        </div>
+      ) : (
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/campaign"
+            className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1"
+          >
+            ← Return to Campaign Manager
+          </Link>
+          <span className="text-[11px] text-slate-400">
+            Supporting Tool · Graphic Production
+          </span>
+        </div>
+      )}
+
+      {/* Assessment Disclosure Notice */}
+      <div className="mb-6 p-3 rounded-xl border border-slate-200 bg-slate-50/80 text-xs text-slate-600 flex items-start gap-2">
+        <span className="text-base text-slate-400 mt-0.5">ℹ️</span>
+        <div>
+          <strong className="text-slate-800">Graphic Studio Notice:</strong> This studio renders branded 1080p social media cards and carousel graphics client-side via HTML5 Canvas (PNG export). These are crisp typographic & layout assets, not photorealistic AI diffusion photography.
+        </div>
+      </div>
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-2">

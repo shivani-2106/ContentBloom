@@ -1,78 +1,161 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 
 /**
- * Navbar — responsive top navigation bar shown on every page.
+ * Navbar — Streamlined primary SaaS navigation.
+ *
+ * Core destinations:
+ * 1. Dashboard (/)
+ * 2. Campaigns (/campaign)
+ * 3. Generate Content (/generate-all)
+ * 4. Content Calendar (/campaign?tab=calendar)
+ * 5. Asset Library (/campaign?tab=assets)
+ * 6. History (/history)
+ *
+ * Supporting contextual tools:
+ * - Image Studio (/image-studio)
+ * - Video Studio (/video-studio)
+ * - Single Post (/generate)
  */
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const location = useLocation()
+
+  const isCalendarActive = location.pathname === '/campaign' && location.search.includes('tab=calendar')
+  const isAssetsActive = location.pathname === '/campaign' && location.search.includes('tab=assets')
+  const isCampaignActive = location.pathname === '/campaign' && !isCalendarActive && !isAssetsActive
 
   const navLinkClass = ({ isActive }) =>
-    `inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all duration-200 ${
+    `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-150 ${
       isActive
-        ? 'bg-bloom-50 text-bloom-700 font-semibold shadow-xs'
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+        ? 'bg-bloom-50 text-bloom-700 font-bold shadow-2xs'
+        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
     }`
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-        {/* Logo */}
+        {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-bloom-600 via-bloom-500 to-accent-500 flex items-center justify-center shadow-sm shadow-bloom-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-bloom-600 to-bloom-500 flex items-center justify-center shadow-xs shadow-bloom-500/20 group-hover:scale-105 transition-transform">
             <span className="text-white text-sm font-extrabold tracking-tight">CB</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-slate-900 text-lg leading-tight tracking-tight">
-              ContentBloom<span className="text-bloom-600"> AI</span>
+            <span className="font-extrabold text-slate-900 text-base leading-tight tracking-tight flex items-center gap-1">
+              ContentBloom <span className="text-bloom-600 font-black">AI</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wide hidden sm:block">
-              Multi-Format Content Studio
+            <span className="text-[10px] text-slate-400 font-semibold tracking-wide hidden sm:block">
+              Campaign Manager
             </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Primary Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
           <NavLink to="/" end className={navLinkClass}>
-            <span>🏠</span> Home
+            <span>📊</span> Dashboard
           </NavLink>
+
+          <Link
+            to="/campaign"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-150 ${
+              isCampaignActive
+                ? 'bg-bloom-50 text-bloom-700 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            }`}
+          >
+            <span>🚀</span> Campaigns
+          </Link>
 
           <NavLink to="/generate-all" className={navLinkClass}>
-            <span>✨</span> 4-in-1 Studio
-            <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-bloom-100 text-bloom-700">
-              Hot
-            </span>
+            <span>✨</span> Generate Content
           </NavLink>
 
-          <NavLink to="/video-studio" className={navLinkClass}>
-            <span>🎬</span> Video Studio
-          </NavLink>
+          <Link
+            to="/campaign?tab=calendar"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-150 ${
+              isCalendarActive
+                ? 'bg-bloom-50 text-bloom-700 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            }`}
+          >
+            <span>📅</span> Calendar
+          </Link>
 
-          <NavLink to="/image-studio" className={navLinkClass}>
-            <span>🎨</span> Image Studio
-          </NavLink>
-
-          <NavLink to="/campaign" className={navLinkClass}>
-            <span>🚀</span> Campaign (30-Day)
-          </NavLink>
-
-          <NavLink to="/generate" className={navLinkClass}>
-            <span>📝</span> Single Post
-          </NavLink>
+          <Link
+            to="/campaign?tab=assets"
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs lg:text-sm font-semibold transition-all duration-150 ${
+              isAssetsActive
+                ? 'bg-bloom-50 text-bloom-700 font-bold shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            }`}
+          >
+            <span>🗂️</span> Asset Library
+          </Link>
 
           <NavLink to="/history" className={navLinkClass}>
             <span>📚</span> History
           </NavLink>
+
+          {/* Contextual Studio Tools Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setToolsOpen(!toolsOpen)}
+              onBlur={() => setTimeout(() => setToolsOpen(false), 200)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-colors"
+            >
+              <span>🛠️ Studios</span>
+              <span className="text-[10px] text-slate-400">▾</span>
+            </button>
+
+            {toolsOpen && (
+              <div className="absolute right-0 mt-1 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg animate-in fade-in slide-in-from-top-1 z-50">
+                <span className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1 block">
+                  Media & Output Studios
+                </span>
+                <Link
+                  to="/image-studio"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-bloom-700"
+                >
+                  <span>🎨</span> Image Studio (PNG)
+                </Link>
+                <Link
+                  to="/video-studio"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-rose-700"
+                >
+                  <span>🎬</span> Video Studio (WebM ≤60s)
+                </Link>
+                <div className="my-1 border-t border-slate-100" />
+                <span className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1 block">
+                  Connected Destinations
+                </span>
+                <Link
+                  to="/resources/growth-playbook"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-bloom-700"
+                >
+                  <span>📖</span> Growth Playbook
+                </Link>
+                <div className="my-1 border-t border-slate-100" />
+                <Link
+                  to="/generate"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <span>📝</span> Single Post Generator
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
-        {/* Desktop CTA */}
+        {/* Primary Header Action */}
         <div className="hidden sm:flex items-center gap-2 shrink-0">
           <Link
-            to="/generate-all"
-            className="btn-primary py-2 px-3.5 text-xs sm:text-sm shadow-sm"
+            to="/campaign?create=true"
+            className="btn-primary py-2 px-3.5 text-xs sm:text-sm font-bold shadow-xs"
           >
-            <span>✨</span> Create 4 Formats
+            <span>➕</span> New Campaign
           </Link>
         </div>
 
@@ -99,102 +182,108 @@ export default function Navbar() {
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-4 space-y-1 shadow-lg animate-in fade-in slide-in-from-top-2">
+        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-4 space-y-1 shadow-lg animate-in fade-in">
           <NavLink
             to="/"
             end
             onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) =>
-              `block px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+              `block px-3 py-2 rounded-lg text-sm font-semibold ${
+                isActive ? 'bg-bloom-50 text-bloom-700' : 'text-slate-700 hover:bg-slate-50'
               }`
             }
           >
-            🏠 Home Dashboard
+            📊 Dashboard
           </NavLink>
+
+          <Link
+            to="/campaign"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`block px-3 py-2 rounded-lg text-sm font-semibold ${
+              isCampaignActive ? 'bg-bloom-50 text-bloom-700' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            🚀 Campaigns
+          </Link>
 
           <NavLink
             to="/generate-all"
             onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) =>
-              `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+              `block px-3 py-2 rounded-lg text-sm font-semibold ${
+                isActive ? 'bg-bloom-50 text-bloom-700' : 'text-slate-700 hover:bg-slate-50'
               }`
             }
           >
-            <span>✨ Generate All (4 Formats)</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-bloom-100 text-bloom-700">
-              Featured
-            </span>
+            ✨ Generate Content
           </NavLink>
 
-          <NavLink
-            to="/video-studio"
+          <Link
+            to="/campaign?tab=calendar"
             onClick={() => setMobileMenuOpen(false)}
-            className={({ isActive }) =>
-              `block px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
+            className={`block px-3 py-2 rounded-lg text-sm font-semibold ${
+              isCalendarActive ? 'bg-bloom-50 text-bloom-700' : 'text-slate-700 hover:bg-slate-50'
+            }`}
           >
-            🎬 Video Script & Storyboard Studio
-          </NavLink>
+            📅 30-Day Content Calendar
+          </Link>
 
-          <NavLink
-            to="/image-studio"
+          <Link
+            to="/campaign?tab=assets"
             onClick={() => setMobileMenuOpen(false)}
-            className={({ isActive }) =>
-              `block px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
+            className={`block px-3 py-2 rounded-lg text-sm font-semibold ${
+              isAssetsActive ? 'bg-bloom-50 text-bloom-700' : 'text-slate-700 hover:bg-slate-50'
+            }`}
           >
-            🎨 Image & Visual Concept Studio
-          </NavLink>
-
-          <NavLink
-            to="/campaign"
-            onClick={() => setMobileMenuOpen(false)}
-            className={({ isActive }) =>
-              `block px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
-          >
-            🚀 30-Asset Campaign & Scheduler
-          </NavLink>
-
-          <NavLink
-            to="/generate"
-            onClick={() => setMobileMenuOpen(false)}
-            className={({ isActive }) =>
-              `block px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-              }`
-            }
-          >
-            📝 Single Post Generator
-          </NavLink>
+            🗂️ Asset Library
+          </Link>
 
           <NavLink
             to="/history"
             onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) =>
-              `block px-3 py-2 rounded-lg text-sm font-medium ${
-                isActive ? 'bg-bloom-50 text-bloom-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+              `block px-3 py-2 rounded-lg text-sm font-semibold ${
+                isActive ? 'bg-bloom-50 text-bloom-700' : 'text-slate-700 hover:bg-slate-50'
               }`
             }
           >
-            📚 Content Library & History
+            📚 History
           </NavLink>
+
+          <div className="pt-2 border-t border-slate-100">
+            <span className="text-[10px] uppercase font-bold text-slate-400 px-3 block mb-1">
+              Supporting Studios
+            </span>
+            <Link
+              to="/image-studio"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              🎨 Image Studio (PNG)
+            </Link>
+            <Link
+              to="/video-studio"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              🎬 Video Studio (WebM ≤60s)
+            </Link>
+            <Link
+              to="/resources/growth-playbook"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              📖 Growth Playbook
+            </Link>
+          </div>
 
           <div className="pt-2">
             <Link
-              to="/generate-all"
+              to="/campaign?create=true"
               onClick={() => setMobileMenuOpen(false)}
-              className="btn-primary w-full py-2.5 text-center text-sm"
+              className="btn-primary w-full py-2.5 text-xs font-bold justify-center"
             >
-              ✨ Create 4 Formats Now
+              ➕ Create New Campaign
             </Link>
           </div>
         </div>
