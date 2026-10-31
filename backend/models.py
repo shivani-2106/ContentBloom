@@ -1,7 +1,7 @@
 """
 Pydantic models (request / response schemas) for ContentBloom AI.
 """
-
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 from typing import Literal
 
@@ -246,7 +246,6 @@ class VideoPlanRequest(BaseModel):
         description="User creative direction or custom requirements.",
     )
 
-
 class VideoPlanResponse(BaseModel):
     title: str
     hook: str
@@ -261,3 +260,20 @@ class VideoPlanResponse(BaseModel):
     generation_available: bool = False
     visual_style: str = "kinetic_tech"
     content_format: str = "educational_explainer"
+
+    @field_validator("audio_suggestion", mode="before")
+    @classmethod
+    def normalize_audio_suggestion(cls, value):
+        if isinstance(value, dict):
+            parts = []
+
+            for key, item in value.items():
+                if item is not None:
+                    parts.append(f"{key.replace('_', ' ').title()}: {item}")
+
+            return " | ".join(parts)
+
+        if value is None:
+            return "No specific audio suggestion provided."
+
+        return str(value)
