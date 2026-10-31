@@ -1,4 +1,4 @@
-# ContentBloom AI 🌸
+# ContentBloom AI 
 ### AI-Powered Social Media Content Generation Platform
 
 ContentBloom AI is an AI-powered content generation platform that transforms long-form content into engaging, platform-specific social media assets. It helps creators, marketers, and businesses save time, maintain consistency, and scale their content strategy.
@@ -140,7 +140,7 @@ The application is evaluated using the following test scenarios:
 
 Actual test counts and execution results should be recorded from the latest test runs.
 
-## 🔐 Security
+##  Security
 
 - Gemini API credentials are stored in backend environment variables.
 - API keys are not exposed in frontend source code.
@@ -151,7 +151,7 @@ Actual test counts and execution results should be recorded from the latest test
 
 The objective of ContentBloom AI is to simplify social media content creation through AI-powered automation. By converting a single source of information into multiple platform-specific formats, the platform helps users reduce manual effort and maintain a consistent digital presence.
 
-## 🌱 Future Enhancements
+##  Future Enhancements
 
 - Social media publishing integrations.
 - Advanced performance analytics.
@@ -159,7 +159,7 @@ The objective of ContentBloom AI is to simplify social media content creation th
 - Automated content scheduling.
 - AI-powered engagement recommendations.
 
-## 👩‍💻 Developed For
+##  Developed For
 
 **IncuBrix – Growth Engineer Assessment**
 
